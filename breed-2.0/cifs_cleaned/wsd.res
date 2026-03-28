@@ -1,1 +1,1 @@
-/mnt/c/Users/Sasha/repos/genetic_algo/new_ionic_cond_predictor/breed-2.0/cifs_cleaned/wsd.res    0.66027 0.00000  0.66026
+/mnt/c/Users/Sasha/repos/genetic_algo/new_ionic_cond_predictor/breed-2.0/cifs_cleaned/wsd.res    2.62615 0.91599  2.42491

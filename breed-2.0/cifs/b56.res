@@ -1,1 +1,1 @@
-/mnt/c/Users/Sasha/repos/genetic_algo/new_ionic_cond_predictor/breed-2.0/cifs/b56.res    1.60527 0.36845  1.45676
+/mnt/c/Users/Sasha/repos/genetic_algo/new_ionic_cond_predictor/breed-2.0/cifs/b56.res    2.13633 0.76264  2.13633

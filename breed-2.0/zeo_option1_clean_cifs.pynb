@@ -7,7 +7,7 @@ warnings.filterwarnings('ignore')
 
 CIF_DIR = r'C:\Users\Sasha\repos\genetic_algo\new_ionic_cond_predictor\breed-2.0\cifs'
 CLEAN_DIR = r'C:\Users\Sasha\repos\genetic_algo\new_ionic_cond_predictor\breed-2.0\cifs_cleaned'
-ZEO_FEATURES = r'C:\Users\Sasha\repos\genetic_algo\new_ionic_cond_predictor\breed-2.0\zeo_features_v2.csv'
+ZEO_FEATURES = r'C:\Users\Sasha\repos\genetic_algo\new_ionic_cond_predictor\breed-2.0\zeo_features_all.csv'
 
 zeo = pd.read_csv(ZEO_FEATURES)
 zeo['id'] = zeo['id'].astype(str)

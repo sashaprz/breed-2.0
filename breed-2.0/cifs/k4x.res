@@ -1,1 +1,1 @@
-/mnt/c/Users/Sasha/repos/genetic_algo/new_ionic_cond_predictor/breed-2.0/cifs/k4x.res    2.00027 0.00000  1.95527
+/mnt/c/Users/Sasha/repos/genetic_algo/new_ionic_cond_predictor/breed-2.0/cifs/k4x.res    2.07697 0.48704  2.07697
