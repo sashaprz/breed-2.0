@@ -1,0 +1,81 @@
+from pymatgen.core import Structure
+import os
+import numpy as np
+import pandas as pd
+import warnings
+warnings.filterwarnings('ignore')
+
+CIF_DIR = r'C:\Users\Sasha\repos\genetic_algo\new_ionic_cond_predictor\breed-2.0\cifs'
+CLEAN_DIR = r'C:\Users\Sasha\repos\genetic_algo\new_ionic_cond_predictor\breed-2.0\cifs_cleaned'
+ZEO_FEATURES = r'C:\Users\Sasha\repos\genetic_algo\new_ionic_cond_predictor\breed-2.0\zeo_features_all.csv'
+
+zeo = pd.read_csv(ZEO_FEATURES)
+zeo['id'] = zeo['id'].astype(str)
+succeeded = set(zeo.dropna(subset=['largest_included_sphere'])['id'].values)
+all_cifs = [f.replace('.cif', '') for f in os.listdir(CIF_DIR) if f.endswith('.cif')]
+failed_ids = set(all_cifs) - succeeded
+
+os.makedirs(CLEAN_DIR, exist_ok=True)
+
+cleaned = 0
+errors = 0
+
+for cif_id in sorted(failed_ids):
+    cif_path = os.path.join(CIF_DIR, f'{cif_id}.cif')
+    if not os.path.exists(cif_path):
+        continue
+
+    try:
+        struct = Structure.from_file(cif_path)
+
+        if struct.is_ordered:
+            struct.to(filename=os.path.join(CLEAN_DIR, f'{cif_id}.cif'))
+            cleaned += 1
+            continue
+
+        new_species = []
+        new_coords = []
+
+        for site in struct:
+            if site.is_ordered:
+                new_species.append(str(site.specie))
+                new_coords.append(site.frac_coords)
+            else:
+                best_sp = max(site.species.items(), key=lambda x: x[1])
+                sp_str = str(best_sp[0])
+                elem_name = ''
+                for char in sp_str:
+                    if char.isalpha():
+                        elem_name += char
+                    else:
+                        break
+                new_species.append(elem_name)
+                new_coords.append(site.frac_coords)
+
+        coords_array = np.array(new_coords)
+        keep = []
+        for i in range(len(coords_array)):
+            is_dup = False
+            for j in keep:
+                diff = coords_array[i] - coords_array[j]
+                diff = diff - np.round(diff)
+                if np.linalg.norm(diff) < 0.01:
+                    is_dup = True
+                    break
+            if not is_dup:
+                keep.append(i)
+
+        new_species = [new_species[i] for i in keep]
+        new_coords = [new_coords[i] for i in keep]
+
+        clean = Structure(struct.lattice, new_species, new_coords)
+        clean.to(filename=os.path.join(CLEAN_DIR, f'{cif_id}.cif'))
+        cleaned += 1
+
+    except Exception as e:
+        print(f'ERROR {cif_id}: {e}')
+        errors += 1
+
+print(f'\nDone: {cleaned} cleaned, {errors} errors out of {len(failed_ids)}')
+print(f'\nNext: run Zeo++ in WSL:')
+print(f'  bash ~/extract_zeo_cleaned.sh')

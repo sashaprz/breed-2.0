@@ -1,0 +1,3 @@
+@ /mnt/c/Users/Sasha/repos/genetic_algo/new_ionic_cond_predictor/BREED_2/cifs/1xt.volpo Unitcell_volume: 483.511   Density: 4.41516   POAV_A^3: 156.126 POAV_Volume_fraction: 0.3229 POAV_cm^3/g: 0.0731344 PONAV_A^3: 3.43292 PONAV_Volume_fraction: 0.0071 PONAV_cm^3/g: 0.0016081
+PROBE_OCCUPIABLE_VOL_CALC: filename| density(g/cm3)| probe rad| N points| probe ctr A fract| probe ctr NA fract| A fract| NA fract| narrow fract |ovlp fract.
+PROBE_OCCUPIABLE___RESULT: /mnt/c/Users/Sasha/repos/genetic_algo/new_ionic_cond_predictor/BREED_2/cifs/1xt.volpo	4.41516	0.76	10000	0.1059	0.0002	0.3229	0.0071	0.2468	0.4232
