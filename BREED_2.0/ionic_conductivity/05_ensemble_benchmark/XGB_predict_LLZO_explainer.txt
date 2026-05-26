@@ -1,0 +1,299 @@
+XGB_predict_LLZO.py — How It Works
+=====================================
+
+OVERVIEW
+--------
+This script predicts the room-temperature ionic conductivity (S/cm) of
+Li7La3Zr2O12 (LLZO) using an XGBoost model that combines three categories
+of features:
+
+  1. Composition-only features (~16 features) — derived purely from the
+     chemical formula, no crystal structure required.
+  2. Defect proxy features (3 features) — Li vacancy estimates and a
+     combined defect strength, all derived from oxidation state guessing
+     without a CIF.
+  3. BVSE features (6 value features + 1 flag + 2 derived) — raw structural
+     descriptors capturing Li-ion migration barriers, geometric
+     accessibility, and pathway connectivity. All BVSE values are kept
+     in raw eV units; no log or exp transforms are applied to these
+     features.
+
+The model is trained on 478 OBELiX experimental entries. The target
+variable is log10(sigma), where sigma is ionic conductivity in S/cm.
+
+Hyperparameters are tuned once via Optuna (200 trials, 5-fold CV with
+early stopping) on the full feature set and cached to xgb_best_params.json.
+Subsequent runs skip tuning entirely and load directly from the cache.
+
+
+STEP-BY-STEP PIPELINE
+----------------------
+
+STEP 1 — Fetch LLZO structure from Materials Project
+  The script connects to the Materials Project API (requires MP_API_KEY
+  environment variable) and searches for Li7La3Zr2O12. If multiple
+  entries are returned, it picks the one with the lowest energy above the
+  convex hull (i.e., the most thermodynamically stable polymorph). The
+  structure is saved as a CIF file (LLZO_mp.cif).
+
+STEP 2 — Compute BVSE features for LLZO using bvlain
+  The bvlain library (Lain) runs two calculations on the CIF:
+
+  a) bvse_distribution: places the Li1+ ion on a fine 3D grid (0.2 Å
+     resolution, 10 Å cutoff) and evaluates the bond-valence site energy
+     at every grid point. This produces an energy landscape for Li hopping.
+
+     From this landscape the following model features are derived:
+
+       bvse_energy    — 3D percolation barrier (E_3D), the activation
+                        energy Ea most directly linked to conductivity.
+                        Kept in raw eV. One physical quantity, one
+                        representation.
+
+       topology_score — continuous connectivity score: dimensionality / 3.0
+                        0.00 = no percolation, 0.33 = 1D only,
+                        0.67 = 2D, 1.00 = 3D. Single scalar; no
+                        binary or entropy variants.
+
+       bvse_anisotropy — spread of all three percolation barriers:
+                           max(E_1D, E_2D, E_3D) − min(E_1D, E_2D, E_3D)
+                         A large value means conduction is much easier
+                         in some directions than others. Units: eV.
+
+       bvse_accessible — fraction of grid points whose bond-valence site
+                         energy is within 1 eV of the global minimum; a
+                         proxy for the density of available Li sites.
+
+  b) void_distribution: computes the geometric free-sphere radius at
+     every grid point (the radius of the largest sphere that fits without
+     overlapping framework atoms).
+
+       bvse_bottleneck — minimum free-sphere radius along the 3D
+                         percolating void path (Å); smaller values mean
+                         Li faces tighter geometric bottlenecks.
+                         Kept raw (Å), not log-transformed.
+
+  Additionally:
+       bvse_li_count   — total Li atoms per unit cell (from the fetched
+                         structure).
+       bvse_available  — binary flag: 1 if BVSE was computed from a real
+                         or proxy CIF, 0 if unavailable (all BVSE value
+                         features zeroed out for that training entry).
+
+  Derived BVSE features (each encodes one physical quantity):
+
+       bvse_energy_inv      — 1 / (bvse_energy + 1e-6)
+                              Reciprocal activation energy; captures the
+                              exponential Arrhenius relationship between
+                              Ea and conductivity without log-transforming
+                              the feature itself.
+
+       li_mobility_capacity — bvse_accessible × bvse_li_count
+                              Joint proxy for available carrier count and
+                              site accessibility; no Ea involved.
+
+  Note: NO log or exp transforms are applied to any BVSE feature.
+  All values are stored in their natural units (eV or Å or fractions).
+
+STEP 3 — Extract composition and defect proxy features
+  a) Composition features (~16): computed from the chemical formula alone
+     using pymatgen. These mirror the features built in
+     03_tier1_features.ipynb:
+
+       li_count                — Li atoms per formula unit
+       mean_electronegativity  — composition-weighted mean Pauling EN
+       anion_electronegativity — EN of the most electronegative anion
+       cation_anion_en_diff    — anion EN minus composition-weighted
+                                 cation EN
+       mean_ionic_radius       — composition-weighted mean ionic radius (Å)
+       anion_ionic_radius      — ionic radius of the dominant anion (Å)
+       radius_std              — standard deviation of ionic radii across
+                                 all atoms in the formula
+       anion_polarizability    — weighted mean anion polarizability
+                                 (O: 1.2, S: 5.5, Se: 7.0, etc.)
+       mean_atomic_mass        — composition-weighted mean atomic mass (amu)
+       n_elements              — number of distinct elements
+       mean_atomic_number      — composition-weighted mean Z
+       anion_type_*            — one-hot encoding: oxide / sulfide /
+                                 halide / mixed / other
+
+     Anions are identified by matching elements against a known anion list
+     (O, S, Se, Te, F, Cl, Br, I, N); if none match, the most
+     electronegative element is treated as the anion.
+
+  b) Defect proxy features (3): estimated from pymatgen oxidation state
+     guessing, without needing a CIF:
+
+       li_stoich_deviation — abs(li_actual − li_ideal), where li_ideal
+                             is the Li count required to balance the
+                             non-Li framework charge. Zero = perfectly
+                             stoichiometric; positive = Li excess or
+                             deficit.
+
+       dopant_presence     — count of elements in the reduced formula
+                             whose stoichiometric coefficient is
+                             non-integer (> 0.05 from nearest integer),
+                             used as a proxy for aliovalent substitution.
+
+       defect_strength     — li_stoich_deviation + dopant_presence.
+                             Combined scalar summarising total defect
+                             load without duplicating individual terms.
+
+STEP 4 — Load and prepare training data
+  Training data comes from three CSV files:
+
+    comp_train.csv              — identifiers and source labels
+    comp_train_features.csv     — pre-computed composition features for
+                                  all 478 OBELiX entries
+    bvse_features_combined.csv  — BVSE features for the subset of entries
+                                  that have CIF files
+
+  The BVSE CSV is left-joined onto the training set. Entries without a CIF
+  fall back through a source hierarchy:
+
+    Source tier     Confidence   How BVSE was obtained
+    -----------     ----------   ------------------------------------
+    real            1.00         Original dataset CIF (best quality)
+    real            0.85         Exact formula/chemsys match from MP
+    proxy           0.05–0.75    Relaxed parent structure (minor dopants
+                                 dropped); confidence = exp(-3 * lattice_score)
+    guessed         0.00         No CIF available
+
+  For entries in the guessed tier, all BVSE value features are set to 0.0
+  and bvse_available is set to 0, letting the model learn to ignore BVSE
+  features when no structural data exists.
+
+  Sample weights are assigned by source tier and passed to XGBoost's fit():
+
+    real    → weight 1.0   (high-confidence structural features)
+    proxy   → weight 0.5   (approximate structural features)
+    guessed → weight 0.1   (composition-only proxy; BVSE all zeros)
+
+  Feature construction order:
+
+    1. topology_score        — dimensionality / 3.0
+    2. bvse_anisotropy       — max − min across all three barriers (eV)
+    3. bvse_energy_inv       — 1 / (bvse_energy + 1e-6)
+    4. li_mobility_capacity  — bvse_accessible × bvse_li_count
+
+  No log or exp transforms are applied at any stage. All features are
+  used at their raw scale.
+
+  Li site counts are read directly from the CIF files on disk.
+
+STEP 5 — Optuna hyperparameter tuning with early stopping in CV folds
+  On the first run, Optuna searches for the best XGBoost hyperparameters
+  using 200 trials of 5-fold cross-validation. Within each CV fold the
+  training portion is further split 85/15; XGBoost trains on the 85%
+  inner split and early-stops on the 15% inner validation split
+  (30 rounds patience) before being scored on the outer held-out fold.
+  This prevents n_estimators from being artificially inflated and gives
+  a conservative, regularised estimate of each hyperparameter set's
+  true generalisation error.
+
+  The Optuna search space covers:
+
+    n_estimators      100–1000    number of boosting rounds
+    max_depth         2–8         depth per tree
+    learning_rate     0.005–0.3   log-uniform shrinkage
+    subsample         0.4–1.0     row subsampling per tree
+    colsample_bytree  0.3–1.0     column subsampling per tree
+    min_child_weight  1–20        minimum sum of instance weight per leaf
+    reg_alpha         1e-8–10     L1 regularisation (log-uniform)
+    reg_lambda        1e-8–10     L2 regularisation (log-uniform)
+    gamma             0–5         minimum loss reduction for a split
+
+  The TPE sampler (Tree-structured Parzen Estimator) builds a
+  probabilistic model of which parameter regions are promising after
+  ~15 random trials, then concentrates sampling there.
+
+  The best hyperparameters and the Optuna CV MAE are written to
+  xgb_best_params.json. On every subsequent run the file is loaded
+  directly and the Optuna search is skipped entirely.
+
+STEP 6 — Train the final model
+  The final XGBoost model is trained on 85% of the full training set,
+  with the remaining 15% held out as a validation set for early stopping
+  (30 rounds patience). Sample weights from Step 4 are used. The best
+  iteration (determined by early stopping on the held-out validation
+  split) is reported. The full 5-fold CV MAE with early stopping is
+  then recomputed and reported as the primary model quality diagnostic.
+
+STEP 7 — Assemble the LLZO feature row and predict
+  The composition features, defect proxies, and live BVSE features are
+  combined into a single feature vector. No inline transformations are
+  applied — all BVSE values are inserted at their raw eV/Å scale,
+  matching the representation used during training. LLZO's
+  bvse_available = 1 (real MP CIF, no imputation).
+
+STEP 8 — Convert and report
+  The log-scale prediction is back-transformed:
+
+    sigma = 10 ^ log10(sigma)
+
+  An uncertainty range is estimated by shifting the log prediction by
+  ±1 CV-MAE and back-transforming:
+
+    sigma_low  = 10 ^ (log10(sigma) − CV_MAE)
+    sigma_high = 10 ^ (log10(sigma) + CV_MAE)
+
+  CV-MAE is used here rather than training MAE because it reflects
+  held-out generalisation error, giving a more honest bound. The
+  experimental reference range for cubic LLZO is ~10^-4 to 10^-3 S/cm.
+
+
+FEATURE SUMMARY TABLE
+----------------------
+
+Category         Feature                  Description
+--------         -------                  -----------
+Composition      li_count                 Li per formula unit
+                 mean_electronegativity   Composition-wt. Pauling EN
+                 anion_electronegativity  Max anion EN
+                 cation_anion_en_diff     Anion EN − cation EN
+                 mean_ionic_radius        Composition-wt. ionic radius
+                 anion_ionic_radius       Dominant anion radius
+                 radius_std               Spread of ionic radii
+                 anion_polarizability     Wt. anion polarizability
+                 mean_atomic_mass         Composition-wt. mass
+                 n_elements               Number of distinct elements
+                 mean_atomic_number       Composition-wt. Z
+                 anion_type_oxide/etc.    One-hot anion class
+
+Defect proxies   li_stoich_deviation      abs(li_actual − li_ideal)
+                 dopant_presence          Non-integer stoich. element count
+                 defect_strength          li_stoich_deviation + dopant_presence
+
+BVSE (raw)       bvse_energy              E_3D activation energy (eV)
+                 topology_score           dimensionality / 3.0  (0→1)
+                 bvse_anisotropy          max(E1D,E2D,E3D) − min(...) (eV)
+                 bvse_bottleneck          Min void radius, raw Å
+                 bvse_accessible          Fraction of sites within 1 eV
+                 bvse_li_count            Li atoms per unit cell
+                 bvse_available           1 = CIF available, 0 = unavailable
+                 bvse_energy_inv          1 / (bvse_energy + 1e-6)
+                 li_mobility_capacity     bvse_accessible × bvse_li_count
+
+
+DIFFERENCES FROM GBT_predict_LLZO.py
+--------------------------------------
+
+  Model           GradientBoostingRegressor → xgb.XGBRegressor
+  Hyperparams     Hardcoded → Optuna-tuned, cached to xgb_best_params.json
+  Early stopping  None → 30 rounds on inner 85/15 split (CV + final fit)
+  CV evaluation   cross_val_score → manual KFold with early stopping
+  Uncertainty     ±1 train-MAE → ±1 CV-MAE (held-out, not training error)
+  Defect features charge_compensation_proxy removed
+  BVSE derived    bvse_energy_inv added (1/Ea; Arrhenius-motivated)
+  Sample weights  Identical scheme (real=1.0, proxy=0.5, guessed=0.1)
+
+
+KEY DEPENDENCIES
+----------------
+  pymatgen     — Composition parsing, ionic radii, oxidation states, CIF I/O
+  mp-api       — Materials Project REST client (structure fetch)
+  bvlain       — Bond-Valence Site Energy and void distribution
+  xgboost      — XGBRegressor with native sample-weight and early stopping
+  optuna       — Bayesian hyperparameter search (TPE sampler)
+  scikit-learn — KFold, train_test_split, mean_absolute_error
+  pandas/numpy — Data wrangling and feature construction
