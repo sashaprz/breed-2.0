@@ -13,7 +13,7 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Local-only
-BREED_2.0/ionic_conductivity/claude_wiki/
+BREED_2.0/claude_wiki/
 
 # OS
 .DS_Store
