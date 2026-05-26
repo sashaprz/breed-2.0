@@ -5,6 +5,7 @@
 For lithium solid electrolytes (log₁₀ σ in S/cm at 300 K), as part of the BREED genetic algorithm. The target is to beat the [published OBELiX RF baseline](https://arxiv.org/abs/2502.14234) (MAE 1.531)
 
 The broader context: ionic conductivity is one of the most important properties for electorlytes, as an electrolyte's main job is to move ions. 
+
 ---
 
 ## The overarching approach
