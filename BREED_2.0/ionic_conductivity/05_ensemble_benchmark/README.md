@@ -65,7 +65,7 @@ log₁₀(σ) = 0.474 × Model1 + 0.526 × Model2
 
 | Model | Train N | CV MAE |
 |---|---|---|
-| OBELiX RF (published baseline) | 478 | 1.531 |
+| OBELiX RF ([published baseline](https://arxiv.org/abs/2502.14234)) | 478 | 1.531 |
 | Our GBT (composition, 478 pts) | 478 | 1.440 |
 | Our GBT (composition, 826 pts) | 826 | 1.192 |
 | **Final ensemble** | 478 + 826 | **~0.90** |

@@ -1,0 +1,210 @@
+{
+  "main": {
+    "id": "cdd34a95eb0b56a1",
+    "type": "split",
+    "children": [
+      {
+        "id": "c48ae745fc5ef2b4",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "32a5e1f937c594be",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "c0f14e2ad5034f7a",
+    "type": "split",
+    "children": [
+      {
+        "id": "6b153048a787250e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "be1ff7ff658d02fe",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "5406ef23cfacb8c5",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "cbb469f18c597265",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "37103b8145854908",
+    "type": "split",
+    "children": [
+      {
+        "id": "d2ebff7deb8726f3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "94f20d70337525cb",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "2d1d6a9b0bdd97a9",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "b23b89089b8aa02b",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "67185cd6b0d185d2",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "5bd9cb708245dbd7",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "32a5e1f937c594be",
+  "lastOpenFiles": [
+    "TODO.md.tmp.4076.0dbec8139e64",
+    "wiki/index.md.tmp.4076.cd2ae9b9615a",
+    "wiki/open-problems.md.tmp.4076.71e51f732c21",
+    "wiki/open-problems.md.tmp.4076.df19a705a5e3",
+    "wiki/concepts/argyrodite-electrolytes.md.tmp.4076.3b97fe6a5f77",
+    "wiki/concepts/ionic-conductivity.md.tmp.4076.da536c0fefee",
+    "wiki/concepts/electrochemical-stability-window.md",
+    "wiki/sources/mechanical-instability-electrode-electrolyte-interfaces.md",
+    "wiki/sources/mechanical-instability-electrode-electrolyte-interfaces.md.tmp.4076.8dabe78e2bf9",
+    "wiki/sources/role-of-interfaces-solid-state-batteries.md",
+    "wiki/sources/role-of-interfaces-solid-state-batteries.md.tmp.4076.55985954d377",
+    "wiki/sources/interfaces-in-solid-state-lithium-batteries.md",
+    "wiki/sources/interfaces-in-solid-state-lithium-batteries.md.tmp.4076.660cd91d61a3",
+    "wiki/sources/understanding-interface-stability-solid-state.md",
+    "wiki/sources/understanding-interface-stability-solid-state.md.tmp.4076.5b391860ca33",
+    "raw/mechanical-instability-of-electrode-electrolyte-interfaces-in-solid-state-batteries.pdf",
+    "wiki/concepts/nasicon-electrolytes.md",
+    "wiki/concepts/argyrodite-electrolytes.md",
+    "wiki/sources/designing-solid-state-electrolytes-safe-energy.md",
+    "wiki/sources/recent-advances-energy-chemistry-solid-state.md",
+    "wiki/sources/lithium-battery-chemistries-enabled-solid-state.md",
+    "wiki/sources/fundamentals-of-inorganic-solid-state-electrolytes.md",
+    "wiki/concepts/mlff.md",
+    "wiki/concepts/bvse.md",
+    "wiki/sources/stability-transferability-mlff.md",
+    "wiki/sources/prediction-3d-potential-landscape-bvse.md",
+    "wiki/sources/data-driven-prediction-ionic-conductivity-llm.md",
+    "wiki/sources/obelix.md"
+  ]
+}

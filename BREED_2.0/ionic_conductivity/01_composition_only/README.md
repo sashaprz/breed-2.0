@@ -23,7 +23,7 @@
 
 **Results on full 829-pt dataset:**
 - GBT default: Test MAE **1.144**, R² 0.521
-- OBELiX RF baseline (their features, 478 pts): 1.531
+- OBELiX RF baseline (their features, 478 pts): 1.531 ([arxiv:2502.14234](https://arxiv.org/abs/2502.14234))
 - Our GBT on OBELiX-only (478 pts): 1.440
 
-The 22% improvement over the published baseline comes from more data, not better features. The model pattern-matches chemistry groups (sulfides conduct, oxides don't) — it will miss unusual good conductors and can't rank within a material family.
+The 22% improvement over the [published baseline](https://arxiv.org/abs/2502.14234) comes from more data, not better features. The model pattern-matches chemistry groups (sulfides conduct, oxides don't) — it will miss unusual good conductors and can't rank within a material family.
