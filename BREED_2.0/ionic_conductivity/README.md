@@ -2,7 +2,7 @@
 
 ## Goal
 
-Build a machine learning model that predicts ionic conductivity (log₁₀ σ in S/cm at 300 K) for lithium solid electrolytes, to serve as the surrogate model for the BREED genetic algorithm. The target is to beat the [published OBELiX RF baseline](https://arxiv.org/abs/2502.14234) (MAE 1.531)/ 
+Build a machine learning model that predicts ionic conductivity (log₁₀ σ in S/cm at 300 K) for lithium solid electrolytes, as part of the BREED genetic algorithm. The target is to beat the [published OBELiX RF baseline](https://arxiv.org/abs/2502.14234) (MAE 1.531)
 
 The broader context: ionic conductivity is one of the most important properties for electorlytes, as an electrolyte's main job is to move ions. 
 ---
@@ -34,9 +34,9 @@ Two approaches:
 | BVSE barrier_3d: Spearman ρ = −0.455 on ordered structures | Strong physical signal, but cuts 60% of data (disordered structures) |
 | Composition-only model wins globally | It pattern-matches chemistry groups, not transport physics |
 
-**Key tension:** every feature tier that adds physical information also requires a CIF file and often ordered (non-disordered) structure — shrinking the usable dataset. At 800 samples, data quantity beats feature quality.
+**Key tension:** every feature tier that adds physical information also requires a CIF file (shrinking the dataset) and often ordered structures (shrinking the dataset even more). At 800 samples, data quantity beats feature quality.
 
-**Why the ensemble is the current best:** it's the only model that captures both. Model 2 uses all 826 training points — the full benefit of the Liverpool data. Model 1 adds BVSE migration barriers, the only feature in the set that directly encodes Li transport physics (Eₐ from the energy landscape, bottleneck radius, pathway dimensionality) rather than just chemistry. Neither model alone dominates: Model 2 wins on data volume, Model 1 wins on feature quality for the entries where CIFs exist. The inverse-MAE weighted average lets both contribute proportionally to their actual performance.
+Initially the composition only model was best simply because it had more data. Eventually I figured out how to add more physics-based features AND simultaneously use all the data. This was in my ensemble model. 
 
 ---
 
@@ -52,7 +52,7 @@ Two XGBoost regressors, inverse-MAE weighted ensemble:
 
 Ensemble weights: Model 1 = 0.474, Model 2 = 0.526 (inverse-MAE, no hand-tuning).
 
-**Noise floor:** experimental MAD ≈ 0.41 log units. Measurement variability (bulk vs total conductivity, sintering, grain boundaries) sets an irreducible noise ceiling. CV MAE of 0.85–0.95 means we're not far above it.
+**Noise floor:** experimental MAD ≈ 0.41 log units. Measurement variability (bulk vs total conductivity, sintering, grain boundaries) sets an irreducible noise ceiling. We got a MAE of 0.85–0.95 means we're not far above it.
 
 **Validated on known electrolytes:**
 | Material | Predicted σ | Experimental | Error |
@@ -61,7 +61,7 @@ Ensemble weights: Model 1 = 0.474, Model 2 = 0.526 (inverse-MAE, no hand-tuning)
 | LGPS (Li₁₀GeP₂S₁₂) | 2.5×10⁻³ S/cm | ~10⁻² S/cm | 4× |
 | LLZO (Li₇La₃Zr₂O₁₂) | 6.3×10⁻⁵ S/cm | ~10⁻⁴–10⁻³ S/cm | in range |
 
-All within ~1 log unit of experiment. Relative ordering is correct: Li₆PS₅Cl > LGPS > LLZO.
+All within ~1 log unit of experiment. Relative ordering is correct: Li₆PS₅Cl > LGPS > LLZO. Yay the model did good! 
 
 ---
 
