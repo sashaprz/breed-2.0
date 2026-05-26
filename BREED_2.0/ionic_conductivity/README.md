@@ -2,10 +2,9 @@
 
 ## Goal
 
-Build a machine learning model that predicts ionic conductivity (log₁₀ σ in S/cm at 300 K) for lithium solid electrolytes, to serve as the surrogate model for the BREED genetic algorithm. The target is to beat the [published OBELiX RF baseline](https://arxiv.org/abs/2502.14234) (MAE 1.531) — ideally reaching MAE < 0.7, which would be publishable as a feature-engineering contribution.
+Build a machine learning model that predicts ionic conductivity (log₁₀ σ in S/cm at 300 K) for lithium solid electrolytes, to serve as the surrogate model for the BREED genetic algorithm. The target is to beat the [published OBELiX RF baseline](https://arxiv.org/abs/2502.14234) (MAE 1.531)/ 
 
-The broader context: ionic conductivity is the primary objective for BREED, with bandgap > 1 eV and reasonable bulk modulus as hard filters. Separately, Voznyy's insight about soft interlayer materials (LiSn, LiAg, LiSi, LiSb) means this predictor also applies to screening thin-film interlayers — where the bar is lower (~0.1–1 mS/cm) and bulk conductivity features are more accurate because grain boundaries matter less.
-
+The broader context: ionic conductivity is one of the most important properties for electorlytes, as an electrolyte's main job is to move ions. 
 ---
 
 ## The overarching approach
