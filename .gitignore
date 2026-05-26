@@ -12,6 +12,9 @@ __pycache__/
 # Jupyter
 .ipynb_checkpoints/
 
+# Local-only
+BREED_2.0/ionic_conductivity/claude_wiki/
+
 # OS
 .DS_Store
 Thumbs.db
