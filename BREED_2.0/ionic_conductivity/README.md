@@ -6,6 +6,8 @@ For lithium solid electrolytes (log₁₀ σ in S/cm at 300 K), as part of the B
 
 The broader context: ionic conductivity is one of the most important properties for electorlytes, as an electrolyte's main job is to move ions. 
 
+My model ended up being ~36% better than the OBELiX baseline. 
+
 ---
 
 ## The overarching approach
@@ -37,7 +39,7 @@ Two approaches:
 
 **Key tension:** every feature tier that adds physical information also requires a CIF file (shrinking the dataset) and often ordered structures (shrinking the dataset even more). At 800 samples, data quantity beats feature quality.
 
-Initially the composition only model was best simply because it had more data. Eventually I figured out how to add more physics-based features AND simultaneously use all the data. This was in my ensemble model. 
+Initially the composition only model was best simply because it had more data. Eventually I figured out how to add more physics-based features AND simultaneously use all the data. This was in my ensemble model. I basically combined the prediction of the worse-feature, more data model with the prediction of the better feature, less data model. 
 
 ---
 
