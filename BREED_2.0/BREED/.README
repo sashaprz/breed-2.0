@@ -1,0 +1,15 @@
+Here's a doc I wrote explaining the details of the algorithm + why I built it :)
+
+https://www.notion.so/sashaprz/BREED-Battery-Research-via-Evolutionary-Electrolyte-Design-256340b75472806aa0acd1900278998b
+
+A list of the resources I used to build this: 
+
+CGCNN: https://github.com/txie-93/cgcnn/blob/master/pre-trained/bulk-moduli.pth.tar
+Materials Project: https://next-gen.materialsproject.org/ 
+CDVAE: https://github.com/txie-93/cdvae
+MODNet: https://github.com/ppdebreuck/modnet
+
+ionic conductivity data: https://github.com/NRC-Mila/OBELiX/tree/main
+
+
+btw - to run this, you'll probably need to set up a venv.
