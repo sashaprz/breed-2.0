@@ -4,6 +4,65 @@ Bulk modulus predictor for inorganic solid-state electrolytes (SSEs).
 
 ---
 
+## How it works (plain-language summary)
+
+1. **Relax the structure** to find the equilibrium volume V0 — the volume
+   at which the crystal sits at its lowest energy (and zero internal pressure).
+2. **Scan volumes around V0.** Generate ~9 new structures by scaling the whole
+   unit cell up and down by a few percent (e.g. ±5%). This scaling is
+   *isotropic* — it stretches/shrinks the cell uniformly so its shape stays the
+   same, only its size changes.
+3. **Relax atomic positions at each fixed volume.** The cell size is locked at
+   each scan point, but the atoms inside are allowed to settle into their
+   lowest-energy arrangement for that volume. Then record the total energy.
+4. **Fit E(V).** Plot energy vs. volume for all scan points. Near the minimum
+   this traces out a smooth bowl-shaped curve, well-described by the
+   Birch-Murnaghan equation of state.
+5. **Read K off the curvature of that curve at its minimum** (V0).
+
+### Why curvature gives the bulk modulus
+
+The bulk modulus is defined as the resistance to uniform compression — how
+much pressure you'd need to apply to produce a given fractional change in
+volume:
+
+```
+K = -V (dP/dV)
+```
+
+Pressure itself is the volume-derivative of energy (a standard thermodynamic
+identity):
+
+```
+P = -dE/dV
+```
+
+Substituting one into the other:
+
+```
+dP/dV = -d^2E/dV^2
+K = -V * (dP/dV) = -V * (-d^2E/dV^2) = V * (d^2E/dV^2)
+```
+
+Evaluated at the equilibrium volume V0 — where dE/dV = 0, i.e. zero pressure,
+the minimum of the curve — this becomes:
+
+```
+K = V0 * (d^2E/dV^2) |_V0
+```
+
+That second derivative is exactly the **curvature of the E(V) curve at its
+minimum**. Intuitively: a stiff material's energy shoots up sharply if you
+compress or expand it even slightly — a narrow, steep well, i.e. high
+curvature, i.e. high K. A soft, compressible material has a shallow, wide
+well — low curvature, low K. The volume-scan + relax-at-each-point procedure
+above is just a numerical way of mapping out that well so its curvature at the
+bottom can be measured. The Birch-Murnaghan fit (Phase 4) is a convenient
+functional form for E(V) that captures this curvature and returns K (and its
+pressure derivative K0') directly as fit parameters.
+
+---
+
 ## Final model: `physics_bulk_modulus.py`
 
 **Method:** MLIP + Birch-Murnaghan equation of state (3rd-order BM fit).
