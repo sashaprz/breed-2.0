@@ -1,0 +1,7 @@
+{
+  "threshold": 0.4802020202020202,
+  "metric": "balanced_accuracy",
+  "value": 0.8729325278008471,
+  "n_val": 15232,
+  "default_0.5_value": 0.8722609714500664
+}

@@ -1,0 +1,25 @@
+# Dependencies for the improved CGCNN band-gap training pipeline.
+#
+# PyTorch: install the CUDA build FIRST, separately, so you get GPU wheels.
+# Pick the line matching your CUDA toolkit, then `pip install -r requirements.txt`
+# for the rest. (CPU-only and Apple Silicon also work — see README_TRAINING.md.)
+#
+#   # CUDA 12.1:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+#   # CUDA 11.8:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu118
+#
+# torch is intentionally left UNPINNED below so it doesn't clobber the CUDA wheel
+# you installed above; any recent 2.x is fine.
+torch>=2.0
+
+# Materials Project access + crystallography
+mp-api>=0.41
+pymatgen>=2024.1.1
+
+# ML / numerics (versions aligned with the rest of the BREED env)
+numpy>=1.26
+scikit-learn>=1.4
+pandas>=2.1
+matplotlib>=3.8
+tqdm>=4.66

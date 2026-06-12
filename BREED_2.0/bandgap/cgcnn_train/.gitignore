@@ -1,0 +1,15 @@
+# Secrets
+.mp_api_key
+
+# Fetched dataset (can be re-downloaded from Materials Project)
+data/
+
+# Trained checkpoints + run artifacts (models/ and splits/ ARE committed --
+# small (~4MB) and needed for predict.py / benchmark_mp.py / reproducible splits)
+*.pth.tar
+!band-gap.pth.tar          # vendored warm-start weights
+!models/*.pth.tar          # trained classifier + regressor ensemble
+
+# Misc
+__pycache__/
+*.pyc

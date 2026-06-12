@@ -1,0 +1,11 @@
+{
+  "n_total": 154373,
+  "n_groups": 104734,
+  "n_train": 123865,
+  "n_val": 15232,
+  "n_test": 15276,
+  "val_frac": 0.1,
+  "test_frac": 0.1,
+  "seed": 42,
+  "leakage": "none"
+}
