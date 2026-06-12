@@ -35,7 +35,7 @@ K = -V (dP/dV)
 Large K = stiff, hard to compress (diamond). Small K = soft, squishes easily
 under modest pressure (a soft halide). For a quick intuitive primer on what
 bulk modulus means physically, see
-[this short video](https://youtube.com/shorts/SG4xx-lQ898?si=PF7e_ONP4euBpi2k).
+[this video I made](https://youtube.com/shorts/SG4xx-lQ898?si=PF7e_ONP4euBpi2k).
 
 ### Why curvature gives the bulk modulus
 
