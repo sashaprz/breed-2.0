@@ -1,40 +1,15 @@
 # Band-Gap Screening
 
-This directory implements band-gap screening for GA-generated solid-state
-electrolyte (SSE) candidates in **two stages**, both dealing with the same
-underlying issue: **DFT-PBE systematically underestimates band gaps** by
-30–60% relative to HSE06/experiment.
-
-```
-GA candidate (CIF)
-        │
-        ▼
-┌───────────────────────────────────────────┐
-│ STAGE 1 — First Pass: CGCNN Ensemble       │   cgcnn_train/
-│ predicts a PBE-level band gap directly     │
-│ from the structure -- no DFT needed        │
-└───────────────────────────────────────────┘
-        │  cheap ML triage of the full GA population
-        ▼
-   survivors → DFT relaxation + VASP PBE calculation
-        │
-        ▼
-┌───────────────────────────────────────────┐
-│ STAGE 2 — Second Pass: Scissor Correction  │   second_pass.py
-│ corrects the VASP PBE gap toward an        │
-│ HSE06 / experimental estimate              │
-└───────────────────────────────────────────┘
-        │
-        ▼
-   final electronic-stability gap filter
-```
+This directory predicts band-gap in **two stages**. Main issue: **DFT-PBE systematically underestimates band gaps** by
+30–60% relative to HSE06/experiment. So, first there is a CGCNN that will predict PBE bandgap (trained on Materials Project 
+data), and then there is a scissor correction that will apply an offset to a PBE bandgap to estimate HSE bandgap. 
 
 **Stage 1** (`cgcnn_train/`) is an ML surrogate trained to *reproduce* Materials
 Project's PBE `band_gap` field from a CIF — it stands in for a PBE-DFT
 calculation so the GA can triage thousands of candidates cheaply. Its accuracy
 (§ Part 1, "Accuracy") is measured against real MP PBE values.
 
-**Stage 2** (`second_pass.py`) takes an *actual* VASP-PBE band gap (computed
+**Stage 2** (`second_pass.py`) takes an *actual* PBE band gap (computed
 for the smaller set of candidates that survive to DFT) and applies a frozen
 **scissor correction** — a fixed additive offset calibrated against real
 HSE06/experimental gaps for SSE materials — to estimate the true gap before
@@ -45,12 +20,6 @@ what PBE-DFT *actually* said, toward HSE. Neither stage should be skipped —
 a candidate's gap is only meaningfully comparable to an HSE/experimental
 threshold after Stage 2.
 
-> **Note on terminology**: `BREED_2.0/bulk_modulus/physics_bulk_modulus.py` is
-> an unrelated, parallel screening axis (mechanical stability via MLIPs). It is
-> *not* part of this band-gap "first pass / second pass" pair — the two
-> band-gap stages above only concern the electronic-structure filter.
-
----
 
 ## Part 1 — First Pass: CGCNN Ensemble Predictor
 
