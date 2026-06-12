@@ -49,6 +49,72 @@ CIF  ──►  CGCNN crystal graph  ──►  classifier ──► P(metal)
   the same architecture as the vendored `band-gap.pth.tar`, so the original
   weights could be used as a warm start.
 
+### Population screening (Stage 1 → Stage 2 gate)
+
+`first_pass.py` is the GA-facing entry point: it loads the classifier + 5
+regressors **once** (`BandGapPredictor`) and reuses them across an entire GA
+run, then applies the triage gate via `screen_population()`:
+
+```
+cutoff(candidate)   = 3.0 eV - uncertainty_eV(candidate)
+passes_first_pass   = predicted_band_gap_eV >= cutoff
+```
+
+i.e. a candidate survives to Stage 2 (DFT relaxation + VASP PBE) if the **top
+of its ensemble spread** reaches 3 eV. **3 eV** is the threshold because SSE
+candidates must be electronic insulators — it's a defensible cut for "this
+material is not going to conduct electrons." Subtracting the per-candidate
+`uncertainty_eV` makes the gate more permissive for predictions the ensemble
+itself is unsure about, so candidates aren't dropped on Stage-1 noise alone —
+the real PBE gap (Stage 2) is the actual decision point. Metals
+(`classified_metal=True`, pinned to `predicted_band_gap_eV=0`,
+`uncertainty_eV=0`) get `cutoff=3.0` and are correctly rejected.
+
+#### Why 3 eV?
+
+**What the filter is for.** The electrolyte has to conduct Li+ and not
+electrons. Electronic leakage does two bad things: self-discharge, and — more
+importantly — it nucleates lithium metal *inside* the solid. If electrons
+reach the bulk, they reduce Li+ to Li0 in the interior, which is a major reason
+dendrites grow through garnets like LLZO even though they're mechanically
+stiff (Han et al., *Nature Energy* 2019). "Electronic insulator" isn't a
+nice-to-have — it's the property the gap is a proxy for.
+
+**Why gap maps to that.** Intrinsic electronic carrier concentration scales as
+`exp(-Eg / 2kT)`. At room temperature `kT ~= 0.0257 eV`, so every ~1 eV of gap
+costs roughly 8-9 orders of magnitude in intrinsic carriers:
+
+| Eg | ~intrinsic carrier conc. |
+|----|---------------------------|
+| 1 eV | ~3e-9 |
+| 2 eV | ~1e-17 |
+| 3 eV | ~1e-26 |
+| 4 eV | ~1e-34 |
+
+The jump from 1 eV to 3 eV is ~17 orders of magnitude: at 1 eV there's real
+intrinsic electronic conductivity; at 3 eV it's thermally dead.
+
+**Why not cut lower (the pressure pushing the threshold up).** Two reasons.
+First, `exp(-Eg/2kT)` is the idealized thermal-excitation picture — real
+leakage in SSEs is dominated by defects, mid-gap states, and grain boundaries,
+not clean band-to-band excitation, so margin above the bare thermal argument is
+needed. Second, and bigger: these gaps are PBE/GGA-level (Materials
+Project-style), and DFT systematically underestimates true gaps by 30-50%. A
+predicted 3 eV could be a true 4-5 eV — so a 1 eV cut on PBE numbers risks
+admitting a near-metal.
+
+**Why not cut higher (the pressure pushing the threshold down).** The known
+good Li-conductors split by chemistry: oxide garnets (LLZO) and LiPON sit
+around 5-6 eV — wide, no problem. But the sulfide superionic conductors —
+Li3PS4, argyrodites like Li6PS5Cl, LGPS — cluster around 3-3.5 eV, and those
+are the highest-conductivity SSEs known. A 4 eV cut would delete them from the
+search space entirely.
+
+**3 eV is where these two pressures balance**: high enough that intrinsic
+electronic conduction is negligible and there's margin against DFT
+underestimation, low enough to keep the sulfides. Push it up and you lose the
+best candidates; push it down and you let in near-metals.
+
 ### How it was trained
 
 Code lives in `cgcnn_train/` (see `cgcnn_train/README_TRAINING.md` for the full
@@ -143,13 +209,19 @@ Full results (per-material CSV, scatter plot, summary JSON) are in
 ### Usage
 
 ```bash
+# GA-facing: predict + Stage-1 screen a population (loads weights once)
+python first_pass.py --cif-dir ./generation_042 --out gen042_screen.csv
+python first_pass.py --cif candidate.cif
+python first_pass.py --cif-dir ./generation_042 --threshold 2.5   # custom cutoff
+python first_pass.py --cif-dir ./generation_042 --no-screen       # predict only
+
+# Python API
+#   from first_pass import BandGapPredictor, screen_population
+#   predictor = BandGapPredictor()                    # loads weights once
+#   records = predictor.predict_cif_dir("./gen_042")  # call again per generation
+#   screen_population(records)                        # adds passes_first_pass
+
 cd cgcnn_train
-
-# Single structure
-python predict.py --cif candidate.cif
-
-# Directory of candidates
-python predict.py --cif-dir ./my_candidates --out preds.csv
 
 # Re-run the model's own held-out test split
 python predict.py --test --out test_predictions.csv
@@ -159,17 +231,20 @@ python benchmark_mp.py --n 300 --out-dir benchmark_results
 python benchmark_mp.py --smoke   # quick 30-material check
 ```
 
-`predict.py` returns, per material:
+`first_pass.py` / `predict.py` return, per material:
 `{material_id, predicted_band_gap_eV, uncertainty_eV, p_metal, classified_metal}`.
+`first_pass.py` additionally adds `first_pass_cutoff_eV` and
+`passes_first_pass` (see "Population screening" above).
 
 ### File reference (Part 1)
 
 | File / dir | Contents |
 |---|---|
+| `first_pass.py` | GA-facing entry point: `BandGapPredictor` (loads weights once) + `screen_population()` (Stage-1 → Stage-2 gate) |
 | `cgcnn_train/` | Full training pipeline (see `README_TRAINING.md`) |
 | `cgcnn_train/models/` | Trained checkpoints — classifier, 5 regressors, `threshold.json`, per-seed histories |
 | `cgcnn_train/splits/` | Train/val/test material-id lists + `split_meta.json` |
-| `cgcnn_train/predict.py` | Inference: classifier + ensemble |
+| `cgcnn_train/predict.py` | Training-side inference (test split, single CIFs) — `first_pass.py` is the GA-facing wrapper around this same model |
 | `cgcnn_train/benchmark_mp.py` | Independent MP accuracy benchmark (§2 above) |
 | `cgcnn_train/test_predictions.csv` | Predictions over the held-out test split |
 | `cgcnn_train/benchmark_results/` | Benchmark outputs (CSV, scatter plot, summary JSON) |

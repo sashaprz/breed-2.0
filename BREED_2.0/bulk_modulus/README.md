@@ -2,6 +2,8 @@
 
 Bulk modulus predictor for inorganic solid-state electrolytes (SSEs).
 
+Bulk modulus matters for SSEs because it governs mechanical compatibility with the electrodes during cycling — too stiff and the electrolyte cracks under the electrodes' volume changes, too soft and it can't resist lithium dendrite penetration.
+
 ---
 
 ## How it works (plain-language summary)
@@ -20,15 +22,22 @@ Bulk modulus predictor for inorganic solid-state electrolytes (SSEs).
    Birch-Murnaghan equation of state.
 5. **Read K off the curvature of that curve at its minimum** (V0).
 
-### Why curvature gives the bulk modulus
+### What bulk modulus actually is
 
-The bulk modulus is defined as the resistance to uniform compression — how
-much pressure you'd need to apply to produce a given fractional change in
-volume:
+Bulk modulus K measures resistance to uniform (all-sides) compression: how
+much pressure P you need to apply to squeeze a material by a given fractional
+volume change:
 
 ```
 K = -V (dP/dV)
 ```
+
+Large K = stiff, hard to compress (diamond). Small K = soft, squishes easily
+under modest pressure (a soft halide). For a quick intuitive primer on what
+bulk modulus means physically, see
+[this short video](https://youtube.com/shorts/SG4xx-lQ898?si=PF7e_ONP4euBpi2k).
+
+### Why curvature gives the bulk modulus
 
 Pressure itself is the volume-derivative of energy (a standard thermodynamic
 identity):
@@ -37,7 +46,7 @@ identity):
 P = -dE/dV
 ```
 
-Substituting one into the other:
+Substituting into the definition of K:
 
 ```
 dP/dV = -d^2E/dV^2
@@ -52,14 +61,58 @@ K = V0 * (d^2E/dV^2) |_V0
 ```
 
 That second derivative is exactly the **curvature of the E(V) curve at its
-minimum**. Intuitively: a stiff material's energy shoots up sharply if you
-compress or expand it even slightly — a narrow, steep well, i.e. high
-curvature, i.e. high K. A soft, compressible material has a shallow, wide
-well — low curvature, low K. The volume-scan + relax-at-each-point procedure
-above is just a numerical way of mapping out that well so its curvature at the
-bottom can be measured. The Birch-Murnaghan fit (Phase 4) is a convenient
-functional form for E(V) that captures this curvature and returns K (and its
-pressure derivative K0') directly as fit parameters.
+minimum**. Here's the deeper reason that's true, not just an algebraic
+coincidence:
+
+Near the minimum, E(V) is smooth and its *first* derivative is zero by
+definition of V0 — so the leading behaviour as you move away from V0 is purely
+quadratic (a Taylor expansion has no linear term left). Write the fractional
+volume change as strain `eps = (V - V0) / V0` and the energy *density*
+`u = E / V0` (energy per unit volume — intensive, so it doesn't depend on how
+big a simulation cell you happened to use). Then:
+
+```
+u(eps) ~= u0 + (1/2) K * eps^2,   where   K = d^2u/deps^2 |_eps=0
+```
+
+This is *exactly* the form of Hooke's law for a spring, `U(x) = (1/2) k x^2`,
+where the spring constant `k = U''(0)` is the curvature of the potential well.
+Here, volumetric strain `eps` plays the role of the spring's displacement, and
+K is the "spring constant" of the crystal under uniform compression/expansion
+— except expressed in energy-per-volume units, which is precisely what
+pressure (and hence K) is.
+
+So: a stiff material's energy density rises sharply for a small volumetric
+strain — a narrow, steep well, high curvature, high K. A soft, compressible
+material has a shallow, wide well — low curvature, low K. The volume-scan +
+relax-at-each-point procedure above is a numerical way of mapping out that
+well so its curvature at the bottom can be measured. The Birch-Murnaghan fit
+(Phase 4) is a convenient functional form for E(V) that captures this
+curvature and returns K (and its pressure derivative K0') directly as fit
+parameters.
+
+### Why bulk modulus matters for SSEs
+
+- **Cycling-induced volume changes.** Electrodes expand and contract as Li
+  inserts/extracts during charge/discharge. The SSE has to keep intimate
+  contact at those interfaces without cracking — a function of its
+  stiffness and how it deforms under stress.
+- **Stack pressure.** Solid-state cells are typically assembled under applied
+  external pressure to maintain interfacial contact. How much a candidate
+  compresses under that pressure — and how much pressure is needed to keep it
+  in contact — is set directly by K.
+- **Dendrite suppression (mechanical route).** Separately from the electronic
+  route (band gap — see `BREED_2.0/bandgap/README.md`), the Monroe-Newman
+  mechanical criterion shows that a sufficiently stiff solid electrolyte
+  (elastic/shear modulus large relative to Li metal's) can suppress dendrite
+  penetration by deforming elastically rather than cracking. K is a
+  first-pass, cheap-to-compute proxy for this stiffness before any full
+  elastic-tensor calculation.
+- **Processability trade-off.** Very compliant ceramics are easier to densify
+  (lower sintering temperatures) but may deform too much under stack pressure;
+  very stiff ones resist deformation but can be brittle and prone to
+  interfacial fracture. K is one axis of that trade-off used during candidate
+  screening.
 
 ---
 
